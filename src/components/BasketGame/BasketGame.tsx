@@ -17,9 +17,11 @@ type Phase = 'aiming' | 'flying' | 'success' | 'miss';
 // ── constantes da física, saca só ──────────────────────────────────────────
 // gravidade baixa pra caramba deixa o arco de boa pra item longe chegar lá
 const GRAVITY = 0.18;
-const MAX_DRAG = 200;
 const CART_HIT_RADIUS = 68;
 const TRAJ_STEPS = 40;
+
+// no celular não dá pra arrastar 200px sem sair da tela, então ajusta aí
+const getMaxDrag = () => Math.min(200, window.innerWidth * 0.35);
 
 function dist(a: Vec2, b: Vec2) {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
@@ -54,8 +56,9 @@ function velFromDrag(startPos: Vec2, dragEnd: Vec2, cartPos: Vec2) {
   const dx = dragEnd.x - startPos.x;
   const dy = dragEnd.y - startPos.y;
   const raw = Math.sqrt(dx * dx + dy * dy);
-  const clamped = Math.min(raw, MAX_DRAG);
-  const power = clamped / MAX_DRAG;
+  const maxD = getMaxDrag();
+  const clamped = Math.min(raw, maxD);
+  const power = clamped / maxD;
 
   // bota força nessa max speed pro card lá na pqp alcançar o carrinho
 
@@ -160,14 +163,16 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
 
   const handleDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (phase !== 'aiming') return;
-    e.preventDefault();
+    // prevent default mata o scroll no mobile pra podermos arrastar em paz
+    if (e.cancelable) e.preventDefault();
     isDragging.current = true;
     setDragPos(getEventPos(e));
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (phase !== 'aiming') return;
+    if (e.cancelable) e.preventDefault();
     if (!isDragging.current) return;
-    e.preventDefault();
     setDragPos(getEventPos(e));
   };
 
