@@ -53,8 +53,9 @@ function getTrajectory(sx: number, sy: number, vx: number, vy: number): Vec2[] {
  * nóis joga um 0.09 pra dar margem de erro kkkkk.
  */
 function velFromDrag(startPos: Vec2, dragEnd: Vec2, cartPos: Vec2) {
-  const dx = dragEnd.x - startPos.x;
-  const dy = dragEnd.y - startPos.y;
+  // agora é estilo estilingue (slingshot) invertendo as coordenadas
+  const dx = startPos.x - dragEnd.x;
+  const dy = startPos.y - dragEnd.y;
   const raw = Math.sqrt(dx * dx + dy * dy);
   const maxD = getMaxDrag();
   const clamped = Math.min(raw, maxD);
@@ -237,7 +238,7 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
             {product.emoji} {product.name}
           </span>
           <p>
-            {dragPos ? 'Solte para arremessar! 🎯' : 'Clique e arraste para mirar no carrinho 🛒'}
+            {dragPos ? 'Solte para arremessar! 🎯' : 'Puxe para trás feito estilingue para mirar 🛒'}
           </p>
         </div>
       )}
