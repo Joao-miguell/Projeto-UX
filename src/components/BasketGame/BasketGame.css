@@ -332,10 +332,9 @@
   100% { transform: scale(1) rotate(0deg); }
 }
 
-/* ===== Responsive ===== */
+/* ===== responsivo pra celular ===== */
 @media (max-width: 480px) {
   .throw-hint-banner p { font-size: 0.8rem; white-space: normal; text-align: center; max-width: 240px; }
-  .throw-cancel-btn { bottom: 16px; right: 16px; }
   .throw-result-box { padding: 28px 20px; }
   .throw-result-box h3 { font-size: 1.4rem; }
   .result-big-emoji { font-size: 2.8rem; }
