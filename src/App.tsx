@@ -52,12 +52,10 @@ function App() {
     setCartCatching(true);
     setTimeout(() => setCartCatching(false), 600);
 
-    // fecha o minigame e abre a gaveta do carrinho rapidão
-    setTimeout(() => {
-      setIsThrowOpen(false);
-      setSelectedProduct(null);
-      setIsCartOpen(true);
-    }, 2200);
+    // fecha o minigame e abre a gaveta do carrinho
+    setIsThrowOpen(false);
+    setSelectedProduct(null);
+    setIsCartOpen(true);
   }, [selectedProduct, addItem, setIsCartOpen]);
 
   const handleThrowClose = useCallback(() => {

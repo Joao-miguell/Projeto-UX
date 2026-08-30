@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import confetti from 'canvas-confetti';
 import type { Product } from '../../types';
 import './BasketGame.css';
 
@@ -136,7 +137,16 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
         setBaskets(b => b + 1);
         setCartBounce(true);
         setTimeout(() => setCartBounce(false), 600);
-        setTimeout(() => onSuccess(), 1800);
+        
+        // faz a festa de verdade
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#FF6B35', '#2ecc71', '#f1c40f', '#e74c3c', '#3498db']
+        });
+        
+        setTimeout(() => onSuccess(), 2200);
         return;
       }
 
@@ -343,7 +353,6 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
             <div className="result-big-emoji">🛒</div>
             <h3>No carrinho!</h3>
             <p><strong>{product.name}</strong> foi adicionado com sucesso! 🎉</p>
-            <div className="confetti-row">🎊 🏀 🎉 ✅ 🎊</div>
           </div>
         </div>
       )}
