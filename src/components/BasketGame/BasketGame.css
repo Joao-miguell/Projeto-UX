@@ -1,0 +1,341 @@
+/* ============================================================
+   bagulho de jogar item — taca no carrinho e reza
+   ============================================================ */
+
+/* overlay bolado — escurece tudo mas deixa o header lindão lá em cima */
+.throw-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 800;
+  touch-action: none;
+  user-select: none;
+}
+
+/* ===== camada do svg (os pontinho e a linha) ===== */
+.throw-svg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 820;
+}
+
+/* ===== a bicha voando ===== */
+.throw-ball {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  z-index: 950;
+  pointer-events: none;
+  will-change: left, top;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.5));
+  transition: filter 0.15s;
+}
+
+.throw-ball-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.throw-ball.grabbed {
+  filter: drop-shadow(0 8px 24px rgba(255, 107, 53, 0.7));
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.throw-ball.flying {
+  animation: ball-spin 0.25s linear infinite;
+}
+
+@keyframes ball-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ===== aquele aro brilhante pra mirar ===== */
+.cart-glow-ring {
+  position: fixed;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 910;
+  border: 2.5px dashed rgba(255, 107, 53, 0.4);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cart-glow-ring.on-target {
+  border-color: rgba(46, 204, 113, 0.9);
+  box-shadow:
+    0 0 0 6px rgba(46, 204, 113, 0.12),
+    0 0 24px rgba(46, 204, 113, 0.35);
+  animation: ring-pulse 0.8s ease-in-out infinite;
+}
+
+.cart-glow-ring.success {
+  border-color: rgba(46, 204, 113, 1);
+  box-shadow: 0 0 0 12px rgba(46, 204, 113, 0.2), 0 0 40px rgba(46, 204, 113, 0.5);
+}
+
+.cart-glow-ring.cart-bounce {
+  animation: cart-catch 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ring-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%       { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes cart-catch {
+  0%   { transform: translate(-50%, -50%) scale(1); }
+  40%  { transform: translate(-50%, -50%) scale(1.35); }
+  70%  { transform: translate(-50%, -50%) scale(0.9); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ===== a plaquinha com as dicas na moral ===== */
+.throw-hint-banner {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 840;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  animation: banner-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes banner-slide-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.throw-product-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 24px;
+  border: 1px solid;
+  font-size: 0.82rem;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.3) !important;
+}
+
+.throw-hint-banner p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+  background: rgba(0,0,0,0.55);
+  padding: 8px 18px;
+  border-radius: 24px;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ===== barrinha da força monstra ===== */
+.throw-power-indicator {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 840;
+  background: rgba(0,0,0,0.65);
+  padding: 6px 14px;
+  border-radius: 24px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: fade-in 0.1s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.throw-power-indicator span {
+  font-size: 0.72rem;
+  color: #aaa;
+  font-weight: 600;
+}
+
+.power-track {
+  width: 90px;
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.power-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.04s linear, background 0.15s;
+}
+
+/* ===== placarzinho de acertos e erros ===== */
+.throw-stats-pill {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 840;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.5);
+  padding: 5px 14px;
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ===== botãozinho de vazar ===== */
+.throw-cancel-btn {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 840;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s;
+  pointer-events: all;
+}
+
+.throw-cancel-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ===== tela de resultado boladona ===== */
+.throw-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 870;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  animation: fade-in-result 0.2s ease-out;
+}
+
+@keyframes fade-in-result {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to   { opacity: 1; backdrop-filter: blur(4px); }
+}
+
+.throw-result-box {
+  background: #111;
+  padding: 32px;
+  border-radius: 24px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+  animation: result-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.success-result .throw-result-box {
+  border: 2px solid #2ecc71;
+  background: linear-gradient(180deg, #111 0%, rgba(46, 204, 113, 0.1) 100%);
+}
+
+.miss-result .throw-result-box {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.result-big-emoji {
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+
+.success-result .result-big-emoji {
+  animation: cart-catch 0.6s;
+}
+
+.throw-result-box h3 {
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.success-result .throw-result-box h3 { color: #2ecc71; }
+.miss-result    .throw-result-box h3 { color: #fff; font-size: 1.4rem; }
+
+.throw-result-box p {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.throw-result-box p strong { color: #fff; }
+
+.confetti-row {
+  font-size: 1.5rem;
+  letter-spacing: 6px;
+  animation: confetti-pop 0.5s ease 0.3s both;
+}
+
+@keyframes confetti-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.retry-btn {
+  margin-top: 4px;
+  background: #FF6B35;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 30px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.retry-btn:hover {
+  background: #e55a24;
+  transform: scale(1.04);
+}
+
+/* ===== Cart button bounce (in header, above overlay) ===== */
+.header-cart-btn.cart-catching {
+  animation: cart-btn-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cart-btn-bounce {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.4) rotate(-8deg); }
+  65%  { transform: scale(0.9) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  .throw-hint-banner p { font-size: 0.8rem; white-space: normal; text-align: center; max-width: 240px; }
+  .throw-cancel-btn { bottom: 16px; right: 16px; }
+  .throw-result-box { padding: 28px 20px; }
+  .throw-result-box h3 { font-size: 1.4rem; }
+  .result-big-emoji { font-size: 2.8rem; }
+}

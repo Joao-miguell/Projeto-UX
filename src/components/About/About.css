@@ -1,0 +1,49 @@
+.about-section {
+  padding: 60px 24px;
+  background: #111;
+  color: #fff;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.about-inner {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.about-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: #FF6B35;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ux-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ux-rules-list li {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px 20px;
+  border-radius: 8px;
+  border-left: 4px solid #FF6B35;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #ccc;
+}
+
+.ux-rules-list strong {
+  color: #fff;
+  display: block;
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
