@@ -18,8 +18,11 @@ type Phase = 'aiming' | 'flying' | 'success' | 'miss';
 // ── constantes da física, saca só ──────────────────────────────────────────
 // gravidade baixa pra caramba deixa o arco de boa pra item longe chegar lá
 const GRAVITY = 0.18;
-const CART_HIT_RADIUS = 68;
+const CART_HIT_RADIUS = 36;  // hitbox pequena igual bom senso de designer
 const TRAJ_STEPS = 40;
+
+// vento: desvio lateral por frame — muda a cada arremesso
+let windDrift = 0;
 
 // no celular não dá pra arrastar 200px sem sair da tela, então ajusta aí
 const getMaxDrag = () => Math.min(200, window.innerWidth * 0.35);
@@ -30,10 +33,11 @@ function dist(a: Vec2, b: Vec2) {
 
 function getTrajectory(sx: number, sy: number, vx: number, vy: number): Vec2[] {
   const pts: Vec2[] = [];
-  let x = sx, y = sy, curVy = vy;
+  let x = sx, y = sy, curVy = vy, curVx = vx;
   for (let i = 0; i < TRAJ_STEPS; i++) {
-    x += vx;
+    curVx += windDrift; // a mira ja mostra o vento que vai rolar
     curVy += GRAVITY;
+    x += curVx;
     y += curVy;
     pts.push({ x, y });
     if (y > window.innerHeight + 200) break;
@@ -45,13 +49,6 @@ function getTrajectory(sx: number, sy: number, vx: number, vy: number): Vec2[] {
  * transforma aquela puxada monstra num lançamento.
  * a vel maxima (maxspeed) escala de acordo com a distancia,
  * então QUALQUER produto chega no carrinho no 100% de power.
- *
- * matz: bola mirando reto pro cart cai pela gravidade:
- *   Δy = 0.5 * G * (cartDist / speed)²
- * a gente quer Δy < CART_HIT_RADIUS com power no talo (1).
- * continha = maxspeed_min = cartDist * sqrt(G / (2 * CART_HIT_RADIUS))
- * dá mais ou menos cartDist * 0.036
- * nóis joga um 0.09 pra dar margem de erro kkkkk.
  */
 function velFromDrag(startPos: Vec2, dragEnd: Vec2, cartPos: Vec2) {
   // agora é estilo estilingue (slingshot) invertendo as coordenadas
@@ -63,7 +60,6 @@ function velFromDrag(startPos: Vec2, dragEnd: Vec2, cartPos: Vec2) {
   const power = clamped / maxD;
 
   // bota força nessa max speed pro card lá na pqp alcançar o carrinho
-
   const cartDist = dist(startPos, cartPos);
   const maxSpeed = Math.max(24, cartDist * 0.092);
 
@@ -74,18 +70,27 @@ function velFromDrag(startPos: Vec2, dragEnd: Vec2, cartPos: Vec2) {
 
 
 const MISS_MSGS = [
-  'Errou! 😬',
-  'Quase... 😅',
-  'A mira tá estranha 👀',
-  'Não foi dessa vez.',
-  'Tenta aí de novo!',
-  'O carrinho fugiu.',
+  'Errou feio! 😬',
+  'Quase... tenta mais 😅',
+  'Você é péssimo nisso 👀',
+  'Nem chegou perto irmão.',
+  'Talvez o carrinho não seja pra você.',
+  'O carrinho saiu de fininho.',
+  'Skill issue 💀',
+  'Minha vó acertaria.',
 ];
+
+// quanto tempo até a previa do trajeto sumir (ms)
+const TRAJ_HIDE_DELAY = 800;
+
+// amplitude do balanço do carrinho (px)
+const CART_SWING_AMPLITUDE = 60;
+const CART_SWING_SPEED = 0.04; // radianos por frame
 
 export const BasketGame: React.FC<ThrowLayerProps> = ({
   product,
   startPos,
-  cartPos,
+  cartPos: cartPosInitial,
   onSuccess,
   onClose,
 }) => {
@@ -96,6 +101,17 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
   const [shots, setShots] = useState(0);
   const [baskets, setBaskets] = useState(0);
   const [cartBounce, setCartBounce] = useState(false);
+
+  // posição atual do carrinho (se move!)
+  const [cartPos, setCartPos] = useState<Vec2>(cartPosInitial);
+  const cartAngleRef = useRef(0);
+  const cartAnimRef = useRef<number | null>(null);
+  // ref pra collision no loop de animação (state tem closure stale)
+  const cartPosRef = useRef<Vec2>(cartPosInitial);
+
+  // controle da prévia da mira some
+  const [showTraj, setShowTraj] = useState(true);
+  const trajHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isDragging = useRef(false);
   const ballRef = useRef<Vec2>(startPos);
@@ -111,6 +127,37 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
 
   useEffect(() => () => stopAnim(), [stopAnim]);
 
+  // carrinho bagunçado que fica se mexendo
+  useEffect(() => {
+    if (phase !== 'aiming' && phase !== 'flying') {
+      if (cartAnimRef.current) cancelAnimationFrame(cartAnimRef.current);
+      return;
+    }
+    const swing = () => {
+      cartAngleRef.current += CART_SWING_SPEED;
+      const newPos = {
+        x: cartPosInitial.x + Math.sin(cartAngleRef.current) * CART_SWING_AMPLITUDE,
+        y: cartPosInitial.y + Math.sin(cartAngleRef.current * 0.7) * 20,
+      };
+      cartPosRef.current = newPos; // atualiza a ref (usada no fly loop)
+      setCartPos(newPos);          // atualiza o state (usado no render)
+      cartAnimRef.current = requestAnimationFrame(swing);
+    };
+    cartAnimRef.current = requestAnimationFrame(swing);
+    return () => {
+      if (cartAnimRef.current) cancelAnimationFrame(cartAnimRef.current);
+    };
+  }, [phase, cartPosInitial]);
+
+  // quando começa a arrastar, sorteia o vento e marca pra mira sumir
+  const startDragSession = () => {
+    // vento aleatório entre -0.15 e +0.15 por frame (desvio sutil mas fudido)
+    windDrift = (Math.random() - 0.5) * 0.3;
+    setShowTraj(true);
+    if (trajHideTimer.current) clearTimeout(trajHideTimer.current);
+    trajHideTimer.current = setTimeout(() => setShowTraj(false), TRAJ_HIDE_DELAY);
+  };
+
   const shoot = useCallback((vx: number, vy: number) => {
     stopAnim();
     ballRef.current = { ...startPos };
@@ -122,30 +169,46 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
     const fly = () => {
       const pos = ballRef.current;
       const vel = velRef.current;
-      const nx = pos.x + vel.x;
+      const nvx = vel.x * 0.997 + windDrift; // vento desvia pra um lado kkkk
+      const nx = pos.x + nvx;
       const ny = pos.y + vel.y;
       const nvy = vel.y + GRAVITY;
 
       ballRef.current = { x: nx, y: ny };
-      velRef.current = { x: vel.x * 0.997, y: nvy };
+      velRef.current = { x: nvx, y: nvy };
       setBallPos({ x: nx, y: ny });
 
-      // sucesso papai: bola entrou na área do carrinho
-      if (dist({ x: nx, y: ny }, cartPos) < CART_HIT_RADIUS) {
+      // sucesso! usa a ref do carrinho (posição atual enquanto ele se mexe)
+      if (dist({ x: nx, y: ny }, cartPosRef.current) < CART_HIT_RADIUS) {
         stopAnim();
         setPhase('success');
         setBaskets(b => b + 1);
         setCartBounce(true);
         setTimeout(() => setCartBounce(false), 600);
-        
+
         // faz a festa de verdade
         confetti({
-          particleCount: 150,
-          spread: 80,
+          particleCount: 180,
+          spread: 90,
           origin: { y: 0.6 },
           colors: ['#FF6B35', '#2ecc71', '#f1c40f', '#e74c3c', '#3498db']
         });
-        
+        // segundo salvo de confete um tempinho depois pra ser dramático
+        setTimeout(() => confetti({
+          particleCount: 100,
+          spread: 120,
+          startVelocity: 20,
+          origin: { x: 0.2, y: 0.5 },
+          colors: ['#FF6B35', '#fff', '#f1c40f'],
+        }), 400);
+        setTimeout(() => confetti({
+          particleCount: 100,
+          spread: 120,
+          startVelocity: 20,
+          origin: { x: 0.8, y: 0.5 },
+          colors: ['#FF6B35', '#fff', '#f1c40f'],
+        }), 600);
+
         setTimeout(() => onSuccess(), 2200);
         return;
       }
@@ -162,7 +225,7 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
       animRef.current = requestAnimationFrame(fly);
     };
     animRef.current = requestAnimationFrame(fly);
-  }, [startPos, cartPos, stopAnim, onSuccess]);
+  }, [startPos, stopAnim, onSuccess]);
 
   const getEventPos = (e: React.MouseEvent | React.TouchEvent): Vec2 => {
     if ('touches' in e) {
@@ -177,6 +240,7 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
     // prevent default mata o scroll no mobile pra podermos arrastar em paz
     if (e.cancelable) e.preventDefault();
     isDragging.current = true;
+    startDragSession(); // sorteia vento e começa contagem pra mira sumir
     setDragPos(getEventPos(e));
   };
 
@@ -248,8 +312,15 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
             {product.emoji} {product.name}
           </span>
           <p>
-            {dragPos ? 'Solte para arremessar! 🎯' : 'Puxe para trás feito estilingue para mirar 🛒'}
+            {dragPos
+              ? (showTraj ? 'Mira vai sumir... ⚠️' : 'Solte agora! 🎯')
+              : 'Puxe para trás feito estilingue 🎯 — mira some rápido!'}
           </p>
+          {dragPos && windDrift !== 0 && (
+            <p className="wind-indicator">
+              {windDrift > 0.08 ? '💨💨 Vento forte ←' : windDrift < -0.08 ? '💨💨 Vento forte →' : windDrift > 0 ? '💨 Vento ←' : '💨 Vento →'}
+            </p>
+          )}
         </div>
       )}
 
@@ -280,8 +351,8 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
               strokeDasharray="8 5"
             />
           )}
-          {/* pontinhos do trajeto da bolinha */}
-          {trajPoints.map((p, i) => {
+          {/* pontinhos do trajeto — somem depois de TRAJ_HIDE_DELAY ms */}
+          {showTraj && trajPoints.map((p, i) => {
             const fade = Math.max(0, 1 - i / TRAJ_STEPS * 1.8);
             const r = i < 3 ? 5 : i < 8 ? 4 : 3;
             return (
@@ -294,7 +365,7 @@ export const BasketGame: React.FC<ThrowLayerProps> = ({
               />
             );
           })}
-          {/* zona alvo do carrinho */}
+          {/* zona alvo do carrinho — se move com o carrinho */}
           <circle
             cx={cartPos.x} cy={cartPos.y}
             r={CART_HIT_RADIUS}
