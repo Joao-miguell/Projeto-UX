@@ -90,6 +90,21 @@ A dificuldade é moderada: arremessos bem direcionados têm boa chance de acerta
 
 ---
 
+## ♿ Critérios de Acessibilidade Violados (WCAG)
+
+Baseado no catálogo oficial de diretrizes do [Guia WCAG](https://guia-wcag.com) (WCAG 2.1 e 2.2). O minijogo de arremesso quebra intencionalmente critérios essenciais de acessibilidade digital:
+
+| Critério (WCAG) | Nível | Princípio | O que exige a regra ([guia-wcag.com](https://guia-wcag.com)) | Como o projeto viola |
+|---|---|---|---|---|
+| **2.5.7 - Movimentos de arrastar** | AA | Operável | Funcionalidades que dependem de arrastar (*drag and drop*) devem possuir alternativa via clique/toque simples. | O arremesso exige arrastar estilo estilingue. Não há botão de clique direto para comprar. |
+| **2.1.1 - Teclado** | A | Operável | Todas as funcionalidades devem poder ser acionadas e operadas via teclado. | O minijogo só responde a mouse/touch. Quem navega exclusivamente via teclado não consegue arremessar. |
+| **2.5.1 - Gestos de acionamento** | A | Operável | Funcionalidades que exigem caminho tátil/trajetória precisam de método alternativo de ponteiro simples. | O arremesso exige controle de trajetória e força vetorial sem alternativa de acionador único. |
+| **2.2.2 - Colocar em pausa, parar, ocultar** | A | Operável | Animações ou movimentos automáticos de mais de 5s devem ter controle para pausar, parar ou ocultar. | O cesto de compras oscila continuamente sem parar na tela e sem botão de pausa. |
+| **3.3.1 / 3.3.3 - Identificação e sugestão de erro** | A / AA | Compreensível | Mensagens de erro devem identificar claramente o problema e dar dicas de como resolver. | Erros exibem apenas textos vagos e provocativos (*"Skill issue"*, *"Errou feio"*) sem auxílio de recuperação. |
+| **4.1.2 - Nome, função, valor** | A | Robusto | Componentes customizados devem trazer marcações semânticas para tecnologias assistivas. | A dinâmica física do arremesso e o cesto não possuem marcações semânticas ou avisos para leitores de tela. |
+
+---
+
 ## 📁 Estrutura do projeto
 
 ```
